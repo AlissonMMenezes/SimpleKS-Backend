@@ -9,5 +9,5 @@ RUN go build -mod=readonly -v -o server
 # Application Container
 FROM debian:buster-slim
 RUN mkdir /app
-COPY simpleks-backend /app/server
+COPY server /app/server
 CMD ["/app/server"]
