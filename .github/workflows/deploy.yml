@@ -33,9 +33,15 @@ jobs:
 
       - name: Building application  
         run: |
-          go build 
+          go build -o simpleks-backend
           
-    
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.1
+        with:
+          # Artifact name
+          name: simpleks-backend
+          # A file, directory or wildcard pattern that describes what to upload
+          path: simpleks-backend
 
       - name: Cloud Run
         uses: stefda/action-cloud-run@v1.0
