@@ -29,21 +29,50 @@ jobs:
 
       - name: Listing files
         run: |
-          cd simpleks-backend
           ls -la
 
       - name: Building application  
         run: |
-          cd simpleks-backend                  
-          go build *.go
+          go build -o simpleks-backend
           
-    
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.1
+        with:
+          # Artifact name
+          name: simpleks-backend
+          # A file, directory or wildcard pattern that describes what to upload
+          path: simpleks-backend     
+        
+      #- name: Docker Setup Buildx      
+      #  uses: docker/setup-buildx-action@v1.0.3
+        
+      #- name: Build and push Docker images        
+      #  uses: docker/build-push-action@v2.2.0
+      #  with:
+      #    file: ./Dockerfile
+      #    tags: ${{secrets.GCP_PROJECT}}/simpleks-backend:latest
+      - name: Push to GCR Github Action
+        uses: RafikFarhad/push-to-gcr-github-action@v3
+        with:
+          gcloud_service_key: ${{secrets.GCP_SERVICEKEY}}
+          project_id: ${{secrets.GCP_PROJECT}}
+          image_name: simpleks-backend
+          image_tag: latest
+      
+      #- name: Push Docker GCR
+      #  uses: RaccoonDev/push-docker-gcr@v1
+      #  with:
+      #    image_name: simpleks-backend
+      #    image_tag: latest
+      #  env:
+      #    GCLOUD_SERVICE_KEY: ${{secrets.GCP_SERVICEKEY}}
+      #    GOOGLE_PROJECT_ID: ${{ secrets.GCP_PROJECT }}
 
       - name: Cloud Run
         uses: stefda/action-cloud-run@v1.0
         with:
           # Name of the docker image
-          image: "simpleks-backend"
+          image: gcr.io/${{secrets.GCP_PROJECT}}/simpleks-backend:latest
           # Name of the service in Cloud Run
           service: ${{secrets.GCP_SERVICE}}
           # GCP project
