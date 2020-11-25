@@ -72,7 +72,7 @@ jobs:
         uses: stefda/action-cloud-run@v1.0
         with:
           # Name of the docker image
-          image: ${{secrets.GCP_PROJECT}}/simpleks-backend:latest
+          image: gcr.io/${{secrets.GCP_PROJECT}}/simpleks-backend:latest
           # Name of the service in Cloud Run
           service: ${{secrets.GCP_SERVICE}}
           # GCP project
