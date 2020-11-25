@@ -42,23 +42,24 @@ jobs:
           name: simpleks-backend
           # A file, directory or wildcard pattern that describes what to upload
           path: simpleks-backend     
-          key: ${{secrets.GCP_SERVICEKEY}}
-
-      - name: Building Image
-        uses: docker/build-push-action@v2
+        
+      - name: Docker Setup Buildx      
+        uses: docker/setup-buildx-action@v1.0.3
+        
+      - name: Build and push Docker images        
+        uses: docker/build-push-action@v2.2.0
         with:
-          context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64,linux/386
-          push: false
-          tags: ${{secrets.GCP_PROJECT}}/simpleks-backend:latest         
+          tags: ${{secrets.GCP_PROJECT}}/simpleks-backend:latest"    
 
       - name: Push Docker GCR
-        # You may pin to the exact commit or the version.
-        # uses: RaccoonDev/push-docker-gcr@cbff6c0d9f259694f4c6bd036866eb63e1630712
         uses: RaccoonDev/push-docker-gcr@v1
         with:
-          image_name: ${{secrets.GCP_PROJECT}}/simpleks-backend:latest
+          image_name: simpleks-backend
+          image_tag: latest
+          env:
+            GCLOUD_SERVICE_KEY: ${{secrets.GCP_SERVICEKEY}}
+            GOOGLE_PROJECT_ID: ${{ secrets.GCP_PROJECT }}
 
       - name: Cloud Run
         uses: stefda/action-cloud-run@v1.0
