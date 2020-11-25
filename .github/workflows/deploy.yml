@@ -29,13 +29,11 @@ jobs:
 
       - name: Listing files
         run: |
-          cd simpleks-backend
           ls -la
 
       - name: Building application  
         run: |
-          cd simpleks-backend                  
-          go build *.go
+          go build 
           
     
 
