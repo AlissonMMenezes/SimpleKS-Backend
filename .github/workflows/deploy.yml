@@ -57,9 +57,9 @@ jobs:
         with:
           image_name: simpleks-backend
           image_tag: latest
-          env:
-            GCLOUD_SERVICE_KEY: ${{secrets.GCP_SERVICEKEY}}
-            GOOGLE_PROJECT_ID: ${{ secrets.GCP_PROJECT }}
+        env:
+          GCLOUD_SERVICE_KEY: ${{secrets.GCP_SERVICEKEY}}
+          GOOGLE_PROJECT_ID: ${{ secrets.GCP_PROJECT }}
 
       - name: Cloud Run
         uses: stefda/action-cloud-run@v1.0
