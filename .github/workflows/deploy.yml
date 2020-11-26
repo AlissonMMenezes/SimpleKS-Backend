@@ -45,6 +45,12 @@ jobs:
           project_id: ${{secrets.GCP_PROJECT}}
           image_name: simpleks-backend
           image_tag: latest
+          
+      - name: Creating Envfile
+        run: |
+         rm env.yml
+         echo MONGO_URI=${{secrets.MONGO_URI}} >> env.yml
+         echo ACCESS_SECRET=${{secrets.ACCESS_SECRET}} >> env.yml
          
       - name: Cloud Run
         uses: stefda/action-cloud-run@v1.0
