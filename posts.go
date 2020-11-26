@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -49,7 +50,7 @@ func posts(c *gin.Context) {
 
 	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_name": 1, "author": 1, "post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}}}
 	orderStage := bson.D{{Key: "$sort", Value: bson.M{"post_date": -1}}}
-	collection := client.Database("wordpress").Collection("posts")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 
 	fmt.Println(projectStage)
 	cur, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, orderStage, projectStage})
@@ -88,7 +89,7 @@ func updatePost(c *gin.Context) {
 
 	client := MongoConnector()
 	ctx := context.TODO()
-	collection := client.Database("wordpress").Collection("posts")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 
 	fmt.Println(p.Title, p.Post_Name)
 	criteria := bson.M{"post_name": p.Post_Name}
@@ -125,7 +126,7 @@ func newPost(c *gin.Context) {
 
 	client := MongoConnector()
 	ctx := context.TODO()
-	collection := client.Database("wordpress").Collection("posts")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 
 	fmt.Println(p.Title, p.Post_Name)
 	reg, err := regexp.Compile("[^a-zA-Z0-9/ ]+")
@@ -158,7 +159,7 @@ func newPost(c *gin.Context) {
 func getPost(c *gin.Context) {
 	client := MongoConnector()
 	ctx := context.TODO()
-	collection := client.Database("wordpress").Collection("posts")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 
 	post_name := c.Param("post_name")
 	fmt.Println(post_name)

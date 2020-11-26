@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -18,7 +19,7 @@ func pages(c *gin.Context) {
 
 	matchStage := bson.D{{Key: "$match", Value: bson.M{"publish": true, "post_type": "page"}}}
 	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_name": 1}}}
-	collection := client.Database("wordpress").Collection("posts")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 
 	fmt.Println(projectStage)
 	cur, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, projectStage})

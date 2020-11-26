@@ -53,7 +53,7 @@ func login(c *gin.Context) {
 
 	client := MongoConnector()
 	ctx := context.TODO()
-	collection := client.Database("wordpress").Collection("users")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
 	cur, err := collection.Find(ctx, bson.M{"username": u.Username})
 
 	if err != nil {

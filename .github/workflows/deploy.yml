@@ -51,6 +51,7 @@ jobs:
          rm env.yml
          echo MONGO_URI=${{secrets.MONGO_URI}} >> env.yml
          echo ACCESS_SECRET=${{secrets.ACCESS_SECRET}} >> env.yml
+         echo MONGO_DATABASE=${{secrets.MONGO_DATABASE}}
          
       - name: Cloud Run
         uses: stefda/action-cloud-run@v1.0
