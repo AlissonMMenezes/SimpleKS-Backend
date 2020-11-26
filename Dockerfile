@@ -8,6 +8,7 @@ RUN go build -mod=readonly -v -o server
 
 # Application Container
 FROM debian:buster-slim
+ENV MONGO_URI=${{secrets.MONGO_URI}} ACCESS_SECRET=${{secrets.ACCESS_SECRET}}
 RUN mkdir /app
 RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     ca-certificates && \
