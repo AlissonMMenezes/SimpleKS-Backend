@@ -63,6 +63,6 @@ jobs:
           region: ${{secrets.GCP_REGION}}
           # GCP service key with storage and run permissions
           service key: ${{secrets.GCP_SERVICEKEY}}
-          env: ./env.yaml          
+          env: env.yaml          
           
           
