@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,7 @@ func categories(c *gin.Context) {
 	client := MongoConnector()
 	ctx := context.TODO()
 
-	collection := client.Database("wordpress").Collection("posts")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 
 	matchStage := bson.D{{"$match", bson.M{"category": bson.M{"$exists": true}}}}
 	projectStage := bson.D{{"$project", bson.M{"category": 1, "_id": 0}}}
@@ -61,7 +62,7 @@ func getCategory(c *gin.Context) {
 
 	matchStage := bson.D{{Key: "$match", Value: bson.M{"publish": true, "post_type": "page"}}}
 	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_name": 1}}}
-	collection := client.Database("wordpress").Collection("posts")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 
 	fmt.Println(projectStage)
 	cur, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, projectStage})
