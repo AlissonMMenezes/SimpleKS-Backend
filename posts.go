@@ -16,13 +16,13 @@ import (
 )
 
 type Post struct {
-	Title     string `json:"title"`
-	Post_Name string `json:"post_name"`
-	Post_Type string `json:"post_type"`
-	Content   string `json:"content"`
-	Author    string `json:"author"`
-	Date      string `json:"date"`
-	Publish   bool   `json:"boolean"`
+	Title     string    `json:"title"`
+	Post_Name string    `json:"post_name"`
+	Post_Type string    `json:"post_type"`
+	Content   string    `json:"content"`
+	Author    string    `json:"author"`
+	Post_Date time.Time `json:"date"`
+	Publish   bool      `json:"boolean"`
 }
 
 func posts(c *gin.Context) {
@@ -51,7 +51,6 @@ func posts(c *gin.Context) {
 	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_name": 1, "author": 1, "post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}}}
 	orderStage := bson.D{{Key: "$sort", Value: bson.M{"post_date": -1}}}
 	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
-
 	fmt.Println(projectStage)
 	cur, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, orderStage, projectStage})
 	if err != nil {
@@ -59,8 +58,7 @@ func posts(c *gin.Context) {
 	}
 	defer cur.Close(ctx)
 
-	posts := make(map[string][]Post)
-	posts["posts"] = []Post{}
+	posts := []Post{}
 
 	for cur.Next(ctx) {
 		var result bson.M
@@ -68,15 +66,20 @@ func posts(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		posts["posts"] = append(posts["posts"], Post{Title: fmt.Sprintf("%v", result["title"]), Post_Name: fmt.Sprintf("%v", result["post_name"]), Post_Type: fmt.Sprintf("%v", result["post_type"]),
-			Content: fmt.Sprintf("%v", result["content"]), Author: fmt.Sprintf("%v", result["author"]), Date: fmt.Sprintf("%v", result["post_date"])})
+		p := Post{Title: fmt.Sprintf("%v", result["title"]),
+			Post_Name: fmt.Sprintf("%v", result["post_name"]),
+			Post_Type: fmt.Sprintf("%v", result["post_type"]),
+			Content:   fmt.Sprintf("%v", result["content"]),
+			Author:    fmt.Sprintf("%v", result["author"]),
+		}
+		posts = append(posts, p)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
 
 	fmt.Println("Endpoint Hit: returnAllArticles")
-	c.JSON(200, posts)
+	c.JSON(200, bson.M{"posts": posts})
 	//json.NewEncoder(w).Encode(posts)
 }
 
@@ -134,7 +137,7 @@ func newPost(c *gin.Context) {
 		log.Fatal(err)
 	}
 	p.Author = "Alisson Machado"
-	p.Date = time.Now().String()
+	p.Post_Date = time.Now()
 	p.Post_Name = strings.ToLower(p.Title)
 	p.Post_Name = reg.ReplaceAllString(p.Post_Name, "")
 	p.Post_Name = strings.ReplaceAll(p.Post_Name, " ", "-")
