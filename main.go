@@ -136,6 +136,7 @@ func main() {
 	config.AllowHeaders = []string{"*"}
 
 	r.Use(cors.New(config))
+	r.POST("/subscribe", subscribe)
 	r.GET("/pages", pages)
 	r.GET("/posts", posts)
 	r.GET("/categories", categories)
