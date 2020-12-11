@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,6 +23,15 @@ func subscribe(c *gin.Context) {
 	var s Subscriber
 	if err := c.ShouldBindJSON(&s); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	domain := strings.Split(s.Email, "@")[1]
+	fmt.Printf(domain)
+	mx, err := net.LookupMX(domain)
+	fmt.Println(mx)
+	if err != nil || len(mx) == 0 {
+		c.AbortWithStatusJSON(http.StatusBadRequest, Message{Content: "Invalid Domain!"})
 		return
 	}
 
