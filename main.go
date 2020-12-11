@@ -69,6 +69,7 @@ func login(c *gin.Context) {
 		}
 		user = User{Username: fmt.Sprintf("%v", result["username"]), Password: fmt.Sprintf("%v", result["password"])}
 	}
+	defer client.Disconnect(ctx)
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}

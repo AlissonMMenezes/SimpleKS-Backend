@@ -26,8 +26,6 @@ func pages(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer cur.Close(ctx)
-
 	pages := make(map[string][]Post)
 	pages["pages"] = []Post{}
 
@@ -43,6 +41,7 @@ func pages(c *gin.Context) {
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
+	defer client.Disconnect(ctx)
 
 	fmt.Println("Endpoint Hit: ReturnAllPages")
 	c.JSON(200, pages)

@@ -77,6 +77,7 @@ func posts(c *gin.Context) {
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
+	defer client.Disconnect(ctx)
 
 	fmt.Println("Endpoint Hit: returnAllArticles")
 	c.JSON(200, bson.M{"posts": posts})
@@ -107,6 +108,7 @@ func updatePost(c *gin.Context) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer client.Disconnect(ctx)
 	if result.ModifiedCount == 0 {
 		fmt.Printf("Updated %v Documents!\n", result.ModifiedCount)
 		m := Message{Content: "Post not Updated!"}
@@ -152,6 +154,7 @@ func newPost(c *gin.Context) {
 		log.Fatal(err)
 	}
 	fmt.Printf("inserted %v Documents!\n", result.InsertedID)
+	defer client.Disconnect(ctx)
 	m := Message{Content: "Post Saved!"}
 	c.JSON(200, m)
 
@@ -187,5 +190,6 @@ func getPost(c *gin.Context) {
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
 	}
+	defer client.Disconnect(ctx)
 	fmt.Println(p)
 }
