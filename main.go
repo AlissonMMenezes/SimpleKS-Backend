@@ -148,6 +148,7 @@ func main() {
 	authorized := r.Group("/", isAuthenticated)
 	authorized.POST("/posts", newPost)
 	authorized.PUT("/posts/:post_name", updatePost)
+	authorized.POST("/images", images)
 
 	// Listen and Server in 0.0.0.0:8000
 	r.Run(":8000")
