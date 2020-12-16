@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,8 @@ func images(c *gin.Context) {
 	fmt.Println("========= IMAGE =====")
 	f, img, _ := c.Request.FormFile("image")
 	fmt.Println(img.Filename)
-	filename := "exemplo/" + img.Filename
+	currentTime := time.Now()
+	filename := "content/" + currentTime.Format("2006/01") + "/" + img.Filename
 	fmt.Println("======= Uploading Image =======")
 	bucket := client.Bucket(os.Getenv("GCP_BUCKET"))
 	obj := bucket.Object(filename)
