@@ -129,6 +129,52 @@ func isAuthenticated(c *gin.Context) {
 	return
 }
 
+func changePassword(c *gin.Context) {
+	var u User
+	if err := c.ShouldBindJSON(&u); err != nil {
+		fmt.Println(u)
+		c.JSON(http.StatusUnprocessableEntity, "Invalid json provided")
+		return
+	}
+	fmt.Println("=======> DEBUG")
+	val := strings.Split(c.Request.Header["Authorization"][0], " ")[1]
+	tkn, err := jwt.Parse(val, func(token *jwt.Token) (interface{}, error) {
+		fmt.Println(val)
+		return []byte(os.Getenv("ACCESS_SECRET")), nil
+	})
+	u.Username = fmt.Sprintf("%v", tkn.Claims.(jwt.MapClaims)["user_id"])
+	fmt.Println(u.Username)
+	hash, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.MinCost)
+
+	client := MongoConnector()
+	ctx := context.TODO()
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
+	criteria := bson.D{{"username", u.Username}}
+	fmt.Println(criteria)
+	update := bson.D{{"$set", bson.M{"password": string(hash)}}}
+	fmt.Println(update)
+	result, err := collection.UpdateOne(
+		ctx,
+		criteria,
+		update,
+	)
+	defer client.Disconnect(ctx)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result.ModifiedCount)
+	if result.ModifiedCount == 0 {
+		fmt.Println("== Entered into PUT Method")
+		fmt.Printf("Updated %v Documents!\n", result.ModifiedCount)
+		m := Message{Content: "Password not Updated!"}
+		c.JSON(200, m)
+	} else {
+		m := Message{Content: "Password Updated!"}
+		c.JSON(200, m)
+	}
+}
+
 func main() {
 	r := gin.Default()
 
@@ -149,6 +195,7 @@ func main() {
 	authorized.POST("/posts", newPost)
 	authorized.PUT("/posts/:post_name", updatePost)
 	authorized.POST("/images", images)
+	authorized.PUT("/password", changePassword)
 
 	// Listen and Server in 0.0.0.0:8000
 	r.Run(":8000")
