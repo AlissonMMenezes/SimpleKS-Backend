@@ -180,7 +180,7 @@ func main() {
 
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
-	config.AllowAllHeaders = true
+	config.AllowHeaders = []string{"*"}
 
 	r.Use(cors.New(config))
 	r.POST("/subscribe", subscribe)
