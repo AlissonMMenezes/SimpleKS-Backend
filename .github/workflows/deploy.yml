@@ -52,7 +52,7 @@ jobs:
          echo MONGO_URI=${{secrets.MONGO_URI}} >> env.yml
          echo ACCESS_SECRET=${{secrets.ACCESS_SECRET}} >> env.yml
          echo MONGO_DATABASE=${{secrets.MONGO_DATABASE}} >> env.yml
-         echo GOOGLE_APPLICATION_CREDENTIALS=${{secrets.GCP_SERVICEKEY}} >> env.yml
+         echo GCP_SERVICEKEY=${{secrets.GCP_SERVICEKEY}} >> env.yml
          
       - name: Cloud Run
         uses: stefda/action-cloud-run@v1.0

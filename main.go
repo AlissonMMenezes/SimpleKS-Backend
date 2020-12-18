@@ -179,7 +179,7 @@ func main() {
 	r := gin.Default()
 
 	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
+	config.AllowOrigins = []string{"*"}
 	config.AllowHeaders = []string{"*"}
 
 	r.Use(cors.New(config))
