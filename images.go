@@ -45,7 +45,7 @@ func images(c *gin.Context) {
 	if err := w.Close(); err != nil {
 		fmt.Println("Error: ", err)
 	}
-	url := "https://storage.googleapis.com"
+	url := "https://storage.googleapis.com/"
 	url += os.Getenv("GCP_BUCKET")
 	url += "/" + filename
 	fmt.Println(url)
