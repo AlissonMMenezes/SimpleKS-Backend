@@ -179,8 +179,8 @@ func main() {
 	r := gin.Default()
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"*"}
-	config.AllowHeaders = []string{"*"}
+	config.AllowAllOrigins = true
+	config.AllowAllHeaders = true
 
 	r.Use(cors.New(config))
 	r.POST("/subscribe", subscribe)
