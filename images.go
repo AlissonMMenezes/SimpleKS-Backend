@@ -17,6 +17,7 @@ import (
 )
 
 func images(c *gin.Context) {
+	fmt.Println("=== Request Received!")
 	data, err := base64.StdEncoding.DecodeString(os.Getenv("GCP_SERVICEKEY"))
 	if err != nil {
 		fmt.Println("error:", err)
