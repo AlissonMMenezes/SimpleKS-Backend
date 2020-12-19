@@ -12,20 +12,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Post struct {
-	Title     string    `json:"title"`
-	Post_Name string    `json:"post_name"`
-	Post_Type string    `json:"post_type"`
-	Content   string    `json:"content"`
-	Author    string    `json:"author"`
-	Post_Date time.Time `json:"date"`
-	Publish   bool      `json:"boolean"`
+	Title     string             `json:"title"`
+	Post_Name string             `json:"post_name"`
+	Post_Type string             `json:"post_type"`
+	Content   string             `json:"content"`
+	Author    string             `json:"author"`
+	Post_Date primitive.DateTime `json:"post_date"`
+	Publish   bool               `json:"boolean"`
 }
 
-func posts(c *gin.Context) {
+func publishedPosts(c *gin.Context) {
 
 	client := MongoConnector()
 	ctx := context.TODO()
@@ -71,6 +72,7 @@ func posts(c *gin.Context) {
 			Post_Type: fmt.Sprintf("%v", result["post_type"]),
 			Content:   fmt.Sprintf("%v", result["content"]),
 			Author:    fmt.Sprintf("%v", result["author"]),
+			Post_Date: result["post_date"].(primitive.DateTime),
 		}
 		posts = append(posts, p)
 	}
@@ -81,7 +83,65 @@ func posts(c *gin.Context) {
 
 	fmt.Println("Endpoint Hit: returnAllArticles")
 	c.JSON(200, bson.M{"posts": posts})
-	//json.NewEncoder(w).Encode(posts)
+}
+
+func allPosts(c *gin.Context) {
+
+	client := MongoConnector()
+	ctx := context.TODO()
+
+	fmt.Println(c.Query("category"))
+
+	matchStage := bson.D{{}}
+
+	if c.Query("category") != "" {
+		fmt.Println("Filtering by category", c.Query("category"))
+		matchStage = bson.D{{Key: "$match", Value: bson.M{"publish": true, "post_type": "post", "category": c.Query("category")}}}
+		fmt.Println(matchStage)
+	} else if (c.Query("term")) != "" {
+		fmt.Println("Filtering by term", c.Query("term"))
+		matchStage = bson.D{{Key: "$match", Value: bson.M{"publish": true, "post_type": "post", "content": bson.M{"$regex": "/*." + c.Query("term") + ".*/", "$options": "i"}}}}
+		fmt.Println(matchStage)
+
+	} else {
+		matchStage = bson.D{{Key: "$match", Value: bson.M{"post_type": "post"}}}
+		fmt.Println(matchStage)
+	}
+
+	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_name": 1, "author": 1, "post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}}}
+	orderStage := bson.D{{Key: "$sort", Value: bson.M{"post_date": -1}}}
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
+	fmt.Println(projectStage)
+	cur, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, orderStage, projectStage})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cur.Close(ctx)
+
+	posts := []Post{}
+
+	for cur.Next(ctx) {
+		var result bson.M
+		err := cur.Decode(&result)
+		if err != nil {
+			log.Fatal(err)
+		}
+		p := Post{Title: fmt.Sprintf("%v", result["title"]),
+			Post_Name: fmt.Sprintf("%v", result["post_name"]),
+			Post_Type: fmt.Sprintf("%v", result["post_type"]),
+			Content:   fmt.Sprintf("%v", result["content"]),
+			Author:    fmt.Sprintf("%v", result["author"]),
+			Post_Date: result["post_date"].(primitive.DateTime),
+		}
+		posts = append(posts, p)
+	}
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+	defer client.Disconnect(ctx)
+
+	fmt.Println("Endpoint Hit: returnAllArticles")
+	c.JSON(200, bson.M{"posts": posts})
 }
 
 func updatePost(c *gin.Context) {
@@ -139,11 +199,10 @@ func newPost(c *gin.Context) {
 		log.Fatal(err)
 	}
 	p.Author = "Alisson Machado"
-	p.Post_Date = time.Now()
+	p.Post_Date = primitive.NewDateTimeFromTime(time.Now())
 	p.Post_Name = strings.ToLower(p.Title)
 	p.Post_Name = reg.ReplaceAllString(p.Post_Name, "")
 	p.Post_Name = strings.ReplaceAll(p.Post_Name, " ", "-")
-	p.Publish = true
 	p.Post_Type = p.Post_Type
 	result, err := collection.InsertOne(
 		ctx,
@@ -151,7 +210,9 @@ func newPost(c *gin.Context) {
 	)
 	fmt.Println(err)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		c.AbortWithStatusJSON(500, Message{Content: "Error, verify if the post name is unique"})
+
 	}
 	fmt.Printf("inserted %v Documents!\n", result.InsertedID)
 	defer client.Disconnect(ctx)

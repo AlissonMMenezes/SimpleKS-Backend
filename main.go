@@ -32,7 +32,7 @@ func CreateToken(username string) (string, error) {
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["user_id"] = username
-	atClaims["exp"] = time.Now().Add(time.Minute * 15).Unix()
+	atClaims["exp"] = time.Now().Add(time.Minute * 36000).Unix()
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
 	token, err := at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
 	if err != nil {
@@ -185,13 +185,15 @@ func main() {
 	r.Use(cors.New(config))
 	r.POST("/subscribe", subscribe)
 	r.GET("/pages", pages)
-	r.GET("/posts", posts)
+	r.GET("/posts", publishedPosts)
 	r.GET("/categories", categories)
 	r.GET("/posts/:post_name", getPost)
 	r.POST("/login", login)
 	r.GET("/validateToken", isAuthenticated)
 
-	authorized := r.Group("/", isAuthenticated)
+	authorized := r.Group("/admin", isAuthenticated)
+	authorized.GET("/posts", allPosts)
+	authorized.GET("/pages", allPages)
 	authorized.POST("/posts", newPost)
 	authorized.PUT("/posts/:post_name", updatePost)
 	authorized.POST("/images", images)
