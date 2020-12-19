@@ -24,7 +24,6 @@ func images(c *gin.Context) {
 		return
 	}
 	err = ioutil.WriteFile("/tmp/key.json", data, 0644)
-	fmt.Println(err)
 	ctx := context.Background()
 	client, err := storage.NewClient(ctx, option.WithCredentialsFile("/tmp/key.json"))
 	if err != nil {
@@ -40,6 +39,7 @@ func images(c *gin.Context) {
 	obj := bucket.Object(filename)
 	w := obj.NewWriter(ctx)
 	if _, err := io.Copy(w, f); err != nil {
+		fmt.Println("Was nott possible to upload the image")
 		fmt.Println("Error: ", err)
 	}
 	if err := w.Close(); err != nil {

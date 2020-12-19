@@ -53,6 +53,7 @@ jobs:
          echo ACCESS_SECRET=${{secrets.ACCESS_SECRET}} >> env.yml
          echo MONGO_DATABASE=${{secrets.MONGO_DATABASE}} >> env.yml
          echo GCP_SERVICEKEY=${{secrets.GCP_SERVICEKEY}} >> env.yml
+         echo GCP_BUCKET=${{secrets.GCP_BUCKET}} >> env.yml
          
       - name: Cloud Run
         uses: stefda/action-cloud-run@v1.0
