@@ -24,6 +24,7 @@ type Post struct {
 	Author    string             `json:"author"`
 	Post_Date primitive.DateTime `json:"post_date"`
 	Publish   bool               `json:"boolean"`
+	Layout    string             `json:"layout"`
 }
 
 func publishedPosts(c *gin.Context) {
@@ -49,7 +50,7 @@ func publishedPosts(c *gin.Context) {
 		fmt.Println(matchStage)
 	}
 
-	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_name": 1, "author": 1, "post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}}}
+	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_type": 1, "post_name": 1, "author": 1, "post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}}}
 	orderStage := bson.D{{Key: "$sort", Value: bson.M{"post_date": -1}}}
 	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 	fmt.Println(projectStage)
@@ -67,11 +68,14 @@ func publishedPosts(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		p := Post{Title: fmt.Sprintf("%v", result["title"]),
-			Post_Name: fmt.Sprintf("%v", result["post_name"]),
-			Post_Type: fmt.Sprintf("%v", result["post_type"]),
-			Content:   fmt.Sprintf("%v", result["content"]),
-			Author:    fmt.Sprintf("%v", result["author"]),
+		fmt.Printf("========================================")
+		fmt.Println(result["post_type"])
+
+		p := Post{Title: result["title"].(string),
+			Post_Name: result["post_name"].(string),
+			Post_Type: result["post_type"].(string),
+			Content:   result["content"].(string),
+			Author:    result["author"].(string),
 			Post_Date: result["post_date"].(primitive.DateTime),
 		}
 		posts = append(posts, p)
@@ -89,26 +93,12 @@ func allPosts(c *gin.Context) {
 
 	client := MongoConnector()
 	ctx := context.TODO()
-
-	fmt.Println(c.Query("category"))
-
 	matchStage := bson.D{{}}
 
-	if c.Query("category") != "" {
-		fmt.Println("Filtering by category", c.Query("category"))
-		matchStage = bson.D{{Key: "$match", Value: bson.M{"publish": true, "post_type": "post", "category": c.Query("category")}}}
-		fmt.Println(matchStage)
-	} else if (c.Query("term")) != "" {
-		fmt.Println("Filtering by term", c.Query("term"))
-		matchStage = bson.D{{Key: "$match", Value: bson.M{"publish": true, "post_type": "post", "content": bson.M{"$regex": "/*." + c.Query("term") + ".*/", "$options": "i"}}}}
-		fmt.Println(matchStage)
+	matchStage = bson.D{{Key: "$match", Value: bson.M{"post_type": "post"}}}
+	fmt.Println(matchStage)
 
-	} else {
-		matchStage = bson.D{{Key: "$match", Value: bson.M{"post_type": "post"}}}
-		fmt.Println(matchStage)
-	}
-
-	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_name": 1, "author": 1, "post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}}}
+	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_type": 1, "post_name": 1, "author": 1, "post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}}}
 	orderStage := bson.D{{Key: "$sort", Value: bson.M{"post_date": -1}}}
 	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 	fmt.Println(projectStage)
@@ -126,11 +116,11 @@ func allPosts(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		p := Post{Title: fmt.Sprintf("%v", result["title"]),
-			Post_Name: fmt.Sprintf("%v", result["post_name"]),
-			Post_Type: fmt.Sprintf("%v", result["post_type"]),
-			Content:   fmt.Sprintf("%v", result["content"]),
-			Author:    fmt.Sprintf("%v", result["author"]),
+		p := Post{Title: result["title"].(string),
+			Post_Name: result["post_name"].(string),
+			Post_Type: result["post_type"].(string),
+			Content:   result["content"].(string),
+			Author:    result["author"].(string),
 			Post_Date: result["post_date"].(primitive.DateTime),
 		}
 		posts = append(posts, p)
@@ -231,7 +221,7 @@ func getPost(c *gin.Context) {
 	post_name := c.Param("post_name")
 	fmt.Println(post_name)
 	p := Post{Title: "not found", Post_Name: "not found", Content: "not found"}
-	cur, err := collection.Find(ctx, bson.D{{Key: "post_name", Value: fmt.Sprintf("%v", post_name)}})
+	cur, err := collection.Find(ctx, bson.D{{Key: "post_name", Value: post_name}})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -242,10 +232,18 @@ func getPost(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		p := Post{Title: fmt.Sprintf("%v", result["title"]),
-			Post_Name: fmt.Sprintf("%v", result["post_name"]),
-			Content:   fmt.Sprintf("%v", result["content"]),
-			Post_Type: fmt.Sprintf("%v", result["post_type"])}
+		if result["layout"] != nil {
+			result["layout"] = result["layout"].(string)
+		} else {
+			result["layout"] = ""
+		}
+		p := Post{Title: result["title"].(string),
+			Post_Name: result["post_name"].(string),
+			Content:   result["content"].(string),
+			Post_Type: result["post_type"].(string),
+			Post_Date: result["post_date"].(primitive.DateTime),
+			Layout:    result["layout"].(string),
+		}
 		c.JSON(200, p)
 	}
 	if err := cur.Err(); err != nil {

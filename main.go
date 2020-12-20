@@ -188,6 +188,7 @@ func main() {
 	r.GET("/posts", publishedPosts)
 	r.GET("/categories", categories)
 	r.GET("/posts/:post_name", getPost)
+	r.GET("/page/:page_name", getPage)
 	r.POST("/login", login)
 	r.GET("/validateToken", isAuthenticated)
 
@@ -195,7 +196,9 @@ func main() {
 	authorized.GET("/posts", allPosts)
 	authorized.GET("/pages", allPages)
 	authorized.POST("/posts", newPost)
+	authorized.POST("/pages", newPage)
 	authorized.PUT("/posts/:post_name", updatePost)
+	authorized.PUT("/pages/:post_name", updatePage)
 	authorized.POST("/images", images)
 	authorized.PUT("/password", changePassword)
 
