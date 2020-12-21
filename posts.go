@@ -194,6 +194,7 @@ func newPost(c *gin.Context) {
 	p.Post_Name = reg.ReplaceAllString(p.Post_Name, "")
 	p.Post_Name = strings.ReplaceAll(p.Post_Name, " ", "-")
 	p.Post_Type = p.Post_Type
+	p.Publish = p.Publish
 	result, err := collection.InsertOne(
 		ctx,
 		p,
