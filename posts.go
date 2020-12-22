@@ -23,7 +23,7 @@ type Post struct {
 	Content   string             `json:"content"`
 	Author    string             `json:"author"`
 	Post_Date primitive.DateTime `json:"post_date"`
-	Publish   bool               `json:"boolean"`
+	Publish   bool               `json:"publish"`
 	Layout    string             `json:"layout"`
 }
 
@@ -50,7 +50,11 @@ func publishedPosts(c *gin.Context) {
 		fmt.Println(matchStage)
 	}
 
-	projectStage := bson.D{{Key: "$project", Value: bson.M{"title": 1, "post_type": 1, "post_name": 1, "author": 1, "post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}}}
+	//r := bson.M{"input": "$content", "chars": bson.M{"$regexFindAll": bson.M{"input": "$content", "regex": "\\<.*?\\>"}}}
+	projection := bson.M{"title": 1, "post_type": 1, "post_name": 1, "author": 1,
+		"post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}
+	//bson.M{"$substrCP": bson.A{"$content", 0, 400}
+	projectStage := bson.D{{Key: "$project", Value: projection}}
 	orderStage := bson.D{{Key: "$sort", Value: bson.M{"post_date": -1}}}
 	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 	fmt.Println(projectStage)
@@ -68,8 +72,6 @@ func publishedPosts(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("========================================")
-		fmt.Println(result["post_type"])
 
 		p := Post{Title: result["title"].(string),
 			Post_Name: result["post_name"].(string),
@@ -147,7 +149,7 @@ func updatePost(c *gin.Context) {
 
 	fmt.Println(p.Title, p.Post_Name)
 	criteria := bson.M{"post_name": p.Post_Name}
-	update := bson.D{{Key: "$set", Value: bson.M{"title": p.Title, "content": p.Content}}}
+	update := bson.D{{Key: "$set", Value: bson.M{"title": p.Title, "content": p.Content, "publish": p.Publish}}}
 	fmt.Println(criteria)
 	result, err := collection.UpdateOne(
 		ctx,
@@ -193,8 +195,6 @@ func newPost(c *gin.Context) {
 	p.Post_Name = strings.ToLower(p.Title)
 	p.Post_Name = reg.ReplaceAllString(p.Post_Name, "")
 	p.Post_Name = strings.ReplaceAll(p.Post_Name, " ", "-")
-	p.Post_Type = p.Post_Type
-	p.Publish = p.Publish
 	result, err := collection.InsertOne(
 		ctx,
 		p,
