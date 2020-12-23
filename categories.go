@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -13,28 +14,47 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type Category struct {
+	Name      string `json:"name"`
+	Thumbnail string `json:"thumbnail"`
+}
+
+func updateCategory(c *gin.Context) {
+	var cat Category
+	if err := c.ShouldBindJSON(&cat); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	client := MongoConnector()
+	ctx := context.TODO()
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("categories")
+	query := bson.M{"name": cat.Name}
+	update := bson.M{"$set": bson.M{"thumbnail": cat.Thumbnail}}
+	result, err := collection.UpdateOne(ctx, query, update, options.Update().SetUpsert(true))
+	if err != nil {
+		log.Println("Error! ", err)
+		c.AbortWithStatusJSON(500, bson.M{"Content": "Failed to save thumbnail"})
+	}
+	fmt.Print("Result: ", result)
+	c.JSON(200, bson.M{"message": "Category updated!"})
+}
+
 func categories(c *gin.Context) {
 	fmt.Println("Endpoint Hit: ReturnAllPages")
 
 	client := MongoConnector()
 	ctx := context.TODO()
 
-	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("categories")
 
-	matchStage := bson.D{{"$match", bson.M{"category": bson.M{"$exists": true}}}}
-	projectStage := bson.D{{"$project", bson.M{"category": 1, "_id": 0}}}
-	groupStage := bson.D{{"$group", bson.M{"_id": "$category"}}}
-	fmt.Println(matchStage)
-	fmt.Println(projectStage)
-	fmt.Println(groupStage)
-	fmt.Println(mongo.Pipeline{matchStage, projectStage})
-	cur, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, projectStage, groupStage})
+	cur, err := collection.Find(ctx, bson.M{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer cur.Close(ctx)
 
-	categories := []string{}
+	categories := []Category{}
 
 	for cur.Next(ctx) {
 		var result bson.M
@@ -42,7 +62,8 @@ func categories(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		categories = append(categories, fmt.Sprintf("%v", result["_id"]))
+		cat := Category{Name: result["name"].(string), Thumbnail: result["thumbnail"].(string)}
+		categories = append(categories, cat)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)

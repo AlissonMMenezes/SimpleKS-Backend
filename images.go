@@ -33,7 +33,7 @@ func images(c *gin.Context) {
 	f, img, _ := c.Request.FormFile("image")
 	fmt.Println(img.Filename)
 	currentTime := time.Now()
-	filename := "content/" + currentTime.Format("2006/01") + "/" + img.Filename
+	filename := "content/" + currentTime.Format("2006/01/02") + "/" + img.Filename
 	fmt.Println("======= Uploading Image =======")
 	bucket := client.Bucket(os.Getenv("GCP_BUCKET"))
 	obj := bucket.Object(filename)

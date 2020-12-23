@@ -25,6 +25,8 @@ type Post struct {
 	Post_Date primitive.DateTime `json:"post_date"`
 	Publish   bool               `json:"publish"`
 	Layout    string             `json:"layout"`
+	Thumbnail string             `json:"thumbnail"`
+	Category  string             `json:"category"`
 }
 
 func publishedPosts(c *gin.Context) {
@@ -51,20 +53,21 @@ func publishedPosts(c *gin.Context) {
 	}
 
 	//r := bson.M{"input": "$content", "chars": bson.M{"$regexFindAll": bson.M{"input": "$content", "regex": "\\<.*?\\>"}}}
-	projection := bson.M{"title": 1, "post_type": 1, "post_name": 1, "author": 1,
-		"post_date": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}
-	//bson.M{"$substrCP": bson.A{"$content", 0, 400}
+	projection := bson.M{"title": 1, "thumbnail": 1, "post_type": 1, "post_name": 1, "author": 1,
+		"post_date": 1, "category": 1, "content": bson.M{"$substrCP": bson.A{"$content", 0, 400}}}
+	lookup := bson.D{{Key: "$lookup", Value: bson.M{"from": "categories", "localField": "category", "foreignField": "name", "as": "category"}}}
+	unwind := bson.D{{Key: "$unwind", Value: bson.M{"path": "$category"}}}
 	projectStage := bson.D{{Key: "$project", Value: projection}}
 	orderStage := bson.D{{Key: "$sort", Value: bson.M{"post_date": -1}}}
 	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("posts")
 	fmt.Println(projectStage)
-	cur, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, orderStage, projectStage})
+	cur, err := collection.Aggregate(ctx, mongo.Pipeline{matchStage, orderStage, lookup, unwind, projectStage})
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer cur.Close(ctx)
 
-	posts := []Post{}
+	posts := []bson.M{}
 
 	for cur.Next(ctx) {
 		var result bson.M
@@ -72,15 +75,7 @@ func publishedPosts(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		p := Post{Title: result["title"].(string),
-			Post_Name: result["post_name"].(string),
-			Post_Type: result["post_type"].(string),
-			Content:   result["content"].(string),
-			Author:    result["author"].(string),
-			Post_Date: result["post_date"].(primitive.DateTime),
-		}
-		posts = append(posts, p)
+		posts = append(posts, result)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
@@ -110,7 +105,7 @@ func allPosts(c *gin.Context) {
 	}
 	defer cur.Close(ctx)
 
-	posts := []Post{}
+	posts := []bson.M{}
 
 	for cur.Next(ctx) {
 		var result bson.M
@@ -118,14 +113,7 @@ func allPosts(c *gin.Context) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		p := Post{Title: result["title"].(string),
-			Post_Name: result["post_name"].(string),
-			Post_Type: result["post_type"].(string),
-			Content:   result["content"].(string),
-			Author:    result["author"].(string),
-			Post_Date: result["post_date"].(primitive.DateTime),
-		}
-		posts = append(posts, p)
+		posts = append(posts, result)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
@@ -149,7 +137,7 @@ func updatePost(c *gin.Context) {
 
 	fmt.Println(p.Title, p.Post_Name)
 	criteria := bson.M{"post_name": p.Post_Name}
-	update := bson.D{{Key: "$set", Value: bson.M{"title": p.Title, "content": p.Content, "publish": p.Publish}}}
+	update := bson.D{{Key: "$set", Value: bson.M{"title": p.Title, "content": p.Content, "publish": p.Publish, "thumbnail": p.Thumbnail, "category": p.Category}}}
 	fmt.Println(criteria)
 	result, err := collection.UpdateOne(
 		ctx,
@@ -238,14 +226,8 @@ func getPost(c *gin.Context) {
 		} else {
 			result["layout"] = ""
 		}
-		p := Post{Title: result["title"].(string),
-			Post_Name: result["post_name"].(string),
-			Content:   result["content"].(string),
-			Post_Type: result["post_type"].(string),
-			Post_Date: result["post_date"].(primitive.DateTime),
-			Layout:    result["layout"].(string),
-		}
-		c.JSON(200, p)
+
+		c.JSON(200, result)
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)

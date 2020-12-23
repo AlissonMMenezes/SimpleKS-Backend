@@ -201,6 +201,7 @@ func main() {
 	authorized.PUT("/pages/:post_name", updatePage)
 	authorized.POST("/images", images)
 	authorized.PUT("/password", changePassword)
+	authorized.POST("/categories", updateCategory)
 
 	// Listen and Server in 0.0.0.0:8000
 	r.Run(":8000")
