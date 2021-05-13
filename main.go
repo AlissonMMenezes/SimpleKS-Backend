@@ -184,6 +184,7 @@ func main() {
 
 	r.Use(cors.New(config))
 	r.POST("/subscribe", subscribe)
+	r.GET("/comments", commentsApproved)
 	r.GET("/pages", pages)
 	r.GET("/posts", publishedPosts)
 	r.GET("/categories", categories)
